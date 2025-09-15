@@ -1,13 +1,13 @@
 {
   "fun": [
     { "title": "The Glow of Hope", "url": "story1.html", "type": "Story", "icon": "fa-solid fa-sparkles" },
-    { "title": "Midnight Arcade (micro story)", "url": "story2.html", "type": "Story", "icon": "fa-solid fa-moon" },
-    { "title": "Signal in the Rain", "url": "story3.html", "type": "Story", "icon": "fa-solid fa-tower-broadcast" },
-    { "title": "Tiny Sci-Fi: Last Train", "url": "story4.html", "type": "Story", "icon": "fa-solid fa-train" },
-    { "title": "Pocket Poem Generator", "url": "story-poem.html", "type": "Tool", "icon": "fa-solid fa-feather" },
-    { "title": "Two-Minute Mystery #1", "url": "story-mystery-1.html", "type": "Story", "icon": "fa-solid fa-user-secret" },
-    { "title": "Daily Prompt Picker", "url": "story-prompts.html", "type": "Tool", "icon": "fa-solid fa-wand-magic-sparkles" },
-    { "title": "Calm Breathing Timer", "url": "story-breathe.html", "type": "Tool", "icon": "fa-solid fa-wind" },
+    { "title": "coming soon", "url": "story2.html", "type": "Story", "icon": "fa-solid fa-moon" },
+    { "title": "coming soon", "url": "story3.html", "type": "Story", "icon": "fa-solid fa-tower-broadcast" },
+    { "title": "coming soon", "url": "story4.html", "type": "Story", "icon": "fa-solid fa-train" },
+    { "title": "coming soon", "url": "story-poem.html", "type": "Tool", "icon": "fa-solid fa-feather" },
+    { "title": "coming soon", "url": "story-mystery-1.html", "type": "Story", "icon": "fa-solid fa-user-secret" },
+    { "title": "coming soon", "url": "story-prompts.html", "type": "Tool", "icon": "fa-solid fa-wand-magic-sparkles" },
+    { "title": "coming soon", "url": "story-breathe.html", "type": "Tool", "icon": "fa-solid fa-wind" },
     { "title": "coming soon", "url": "story5.html", "type": "Story", "icon": "fa-solid fa-hourglass-half" },
     { "title": "coming soon", "url": "story6.html", "type": "Story", "icon": "fa-solid fa-hourglass-half" }
   ],
@@ -16,11 +16,11 @@
     { "title": "Clicky Tiles", "url": "game2.html", "type": "Game", "icon": "fa-solid fa-square" },
     { "title": "Endless Train Jumper", "url": "game3.html", "type": "Game", "icon": "fa-solid fa-train" },
     { "title": "Color Catcher", "url": "game4cc.html", "type": "Game", "icon": "fa-solid fa-droplet" },
-    { "title": "Memory Match", "url": "game5.html", "type": "Game", "icon": "fa-solid fa-puzzle-piece" },
-    { "title": "Snake Classic", "url": "game6.html", "type": "Game", "icon": "fa-solid fa-rotate" },
-    { "title": "Flappy Dot", "url": "game7.html", "type": "Game", "icon": "fa-solid fa-circle" },
-    { "title": "Number Guess", "url": "game8.html", "type": "Game", "icon": "fa-solid fa-dice" },
-    { "title": "Reflex Tapper", "url": "game9.html", "type": "Game", "icon": "fa-solid fa-bolt" },
-    { "title": "2048 Mini", "url": "game10.html", "type": "Game", "icon": "fa-solid fa-shapes" }
+    { "title": "coming soon", "url": "game5.html", "type": "Game", "icon": "fa-solid fa-puzzle-piece" },
+    { "title": "coming soon", "url": "game6.html", "type": "Game", "icon": "fa-solid fa-rotate" },
+    { "title": "coming soon", "url": "game7.html", "type": "Game", "icon": "fa-solid fa-circle" },
+    { "title": "coming soon", "url": "game8.html", "type": "Game", "icon": "fa-solid fa-dice" },
+    { "title": "coming soon", "url": "game9.html", "type": "Game", "icon": "fa-solid fa-bolt" },
+    { "title": "coming soon", "url": "game10.html", "type": "Game", "icon": "fa-solid fa-shapes" }
   ]
 }
