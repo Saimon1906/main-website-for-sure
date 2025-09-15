@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe - Ultra Graphics Dark Theme</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background: #1d1f28; /* Dark theme background */
+      overflow: hidden;
+      color: #fff;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #ff0099;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px #ff0099, 0 0 20px #ff0099;
+      animation: neonFlicker 1.5s infinite alternate;
+    }
+
+    @keyframes neonFlicker {
+      0% {
+        text-shadow: 0 0 10px #ff0099, 0 0 20px #ff0099;
+      }
+      100% {
+        text-shadow: 0 0 20px #ff0099, 0 0 30px #ff0099;
+      }
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 150px);
+      grid-gap: 20px;
+      justify-content: center;
+      margin: 30px auto;
+      perspective: 800px;
+      position: relative;
+      z-index: 2;
+    }
+
+    @media (max-width: 768px) {
+      .game-board {
+        grid-template-columns: repeat(3, 100px);
+        grid-gap: 10px;
+      }
+    }
+
+    .cell {
+      width: 150px;
+      height: 150px;
+      background: linear-gradient(135deg, #ff4e50, #f9d423);
+      border: 3px solid #333;
+      box-shadow: 0 0 10px #ff4e50, 0 0 20px #f9d423;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 5px #000;
+      cursor: pointer;
+      transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+      background-size: 200% 200%;
+      animation: blockColorChange 2s linear infinite;
+    }
+
+    @media (max-width: 768px) {
+      .cell {
+        width: 100px;
+        height: 100px;
+        font-size: 2rem;
+      }
+    }
+
+    @keyframes blockColorChange {
+      0% {
+        background-position: 0% 0%;
+      }
+      50% {
+        background-position: 100% 100%;
+      }
+      100% {
+        background-position: 0% 0%;
+      }
+    }
+
+    .cell:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px #ff4e50, 0 0 40px #f9d423;
+    }
+
+    .cell.disabled {
+      pointer-events: none;
+      background: #24243e;
+      color: #ff4e50;
+    }
+
+    .cell.winner {
+      background: #00ff00;
+      animation: glowWinner 1s infinite alternate;
+    }
+
+    @keyframes glowWinner {
+      0%, 100% {
+        box-shadow: 0 0 20px #00ff00;
+      }
+      50% {
+        box-shadow: 0 0 40px #00ff00;
+      }
+    }
+
+    #status {
+      font-size: 1.5rem;
+      margin: 20px;
+      text-shadow: 0 0 10px #ff0099, 0 0 20px #ff0099;
+    }
+
+    @media (max-width: 768px) {
+      #status {
+        font-size: 1.2rem;
+      }
+    }
+
+    #resetButton {
+      padding: 15px 40px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #ff0099, #493240);
+      border: none;
+      border-radius: 10px;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    @media (max-width: 768px) {
+      #resetButton {
+        font-size: 1.2rem;
+        padding: 10px 30px;
+      }
+    }
+
+    #resetButton:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px #ff0099;
+    }
+
+    /* Background animation */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #ff6f61, #ffeb3b);
+      background-size: 200% 200%;
+      animation: backgroundMove 20s ease infinite;
+      z-index: -1;
+    }
+
+    @keyframes backgroundMove {
+      0% {
+        background-position: 0% 0%;
+      }
+      50% {
+        background-position: 100% 100%;
+      }
+      100% {
+        background-position: 0% 0%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Tic Tac Toe - Ultra Graphics Dark Theme</h1>
+  <div class="game-board" id="gameBoard"></div>
+  <p id="status">Player X's Turn</p>
+  <button id="resetButton">Restart Game</button>
+
+  <script>
+    const gameBoard = document.getElementById('gameBoard');
+    const statusText = document.getElementById('status');
+    const resetButton = document.getElementById('resetButton');
+
+    let board = Array(9).fill(null);
+    let currentPlayer = 'X';
+    let isGameActive = true;
+
+    const winningCombinations = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    function createBoard() {
+      gameBoard.innerHTML = '';
+      board.forEach((cell, index) => {
+        const cellDiv = document.createElement('div');
+        cellDiv.classList.add('cell');
+        cellDiv.dataset.index = index;
+        cellDiv.addEventListener('click', handleCellClick);
+        gameBoard.appendChild(cellDiv);
+      });
+    }
+
+    function handleCellClick(event) {
+      const cellIndex = event.target.dataset.index;
+      if (!board[cellIndex] && isGameActive) {
+        board[cellIndex] = currentPlayer;
+        event.target.textContent = currentPlayer;
+        event.target.classList.add('disabled');
+        checkWinner();
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        statusText.textContent = isGameActive ? `Player ${currentPlayer}'s Turn` : statusText.textContent;
+      }
+    }
+
+    function checkWinner() {
+      for (const combination of winningCombinations) {
+        const [a, b, c] = combination;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          statusText.textContent = `Player ${board[a]} Wins!`;
+          highlightWinningCells(combination);
+          isGameActive = false;
+          return;
+        }
+      }
+      if (!board.includes(null)) {
+        statusText.textContent = 'It\'s a Draw!';
+        isGameActive = false;
+      }
+    }
+
+    function highlightWinningCells(combination) {
+      combination.forEach(index => {
+        const cell = document.querySelector(`[data-index='${index}']`);
+        cell.classList.add('winner');
+      });
+    }
+
+    resetButton.addEventListener('click', () => {
+      board = Array(9).fill(null);
+      currentPlayer = 'X';
+      isGameActive = true;
+      statusText.textContent = "Player X's Turn";
+      createBoard();
+    });
+
+    createBoard();
+  </script>
+
+  <!-- Background Animation -->
+  <div class="background"></div>
+</body>
+</html>

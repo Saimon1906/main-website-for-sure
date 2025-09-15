@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endless Train Jumper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Game Header -->
+        <header>
+            <h1>Endless Train Jumper</h1>
+            <p id="tagline">Jump over trains and avoid collisions!</p>
+        </header>
+
+        <!-- Score Section -->
+        <div class="score-board">
+            <p id="current-score">Score: 0</p>
+            <p id="max-score">Developer's Max Score: 1000</p>
+        </div>
+
+        <!-- Game Area -->
+        <div class="game-area">
+            <div id="player"></div>
+        </div>
+
+        <!-- Game Over Message -->
+        <div id="game-over">
+            <h2>Game Over!</h2>
+            <p>Your Score: <span id="final-score">0</span></p>
+            <button onclick="restartGame()">Restart Game</button>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>Made by Saimon</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript Link -->
+    <script>
+        // Game variables
+        const player = document.getElementById("player");
+        const scoreDisplay = document.getElementById("current-score");
+        const finalScore = document.getElementById("final-score");
+        const gameOverDisplay = document.getElementById("game-over");
+        const gameArea = document.querySelector(".game-area");
+
+        let score = 0;
+        let isJumping = false;
+        let gameRunning = true;
+        let trainSpeed = 3000; // Initial train speed (ms)
+        let trains = []; // Array to hold train elements
+        let trainDensity = 1; // Initial train density
+
+        // Initialize game
+        function startGame() {
+            score = 0;
+            trainSpeed = 3000;
+            gameRunning = true;
+            isJumping = false;
+            trains = [];
+            trainDensity = 1;
+            gameOverDisplay.style.display = "none";
+            updateScore();
+            spawnTrain();
+        }
+
+        // Update score
+        function updateScore() {
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+
+        // Handle player jump
+        function jump() {
+            if (isJumping || !gameRunning) return;
+
+            isJumping = true;
+            player.classList.add("jump");
+
+            // Remove jump class after animation ends
+            setTimeout(() => {
+                player.classList.remove("jump");
+                isJumping = false;
+            }, 700); // Match the CSS animation duration
+        }
+
+        // Detect collision
+        function detectCollision() {
+            const playerRect = player.getBoundingClientRect();
+            
+            // Check for collision with each train
+            for (let i = 0; i < trains.length; i++) {
+                const trainRect = trains[i].getBoundingClientRect();
+
+                if (
+                    playerRect.right > trainRect.left &&
+                    playerRect.left < trainRect.right &&
+                    playerRect.bottom > trainRect.top
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Spawn a new train
+        function spawnTrain() {
+            if (!gameRunning) return;
+
+            const train = document.createElement("div");
+            train.classList.add("train");
+            gameArea.appendChild(train);
+            trains.push(train);
+
+            // Set initial position and animation
+            train.style.left = `${Math.random() * 100}%`; // Random left position
+            train.style.animation = `train-move ${trainSpeed}ms linear infinite`;
+
+            // Detect collision and remove the train if off-screen
+            train.addEventListener("animationiteration", () => {
+                if (detectCollision()) {
+                    endGame();
+                } else {
+                    score++;
+                    updateScore();
+
+                    // Increase difficulty and spawn more trains based on score
+                    if (score % 10 === 0) {
+                        increaseDifficulty();
+                    }
+                }
+            });
+
+            // Automatically remove train after moving off screen
+            setTimeout(() => {
+                gameArea.removeChild(train);
+                trains = trains.filter(t => t !== train); // Remove train from array
+            }, trainSpeed);
+        }
+
+        // Increase game difficulty
+        function increaseDifficulty() {
+            if (trainSpeed > 1000) {
+                trainSpeed -= 200; // Speed up the trains
+            }
+
+            // Increase train density after a certain score
+            if (score % 50 === 0) {
+                trainDensity += 1; // Increase train density (more trains)
+            }
+
+            // Speed up trains and spawn new ones more often
+            for (let i = 0; i < trainDensity; i++) {
+                spawnTrain();
+            }
+        }
+
+        // End the game
+        function endGame() {
+            gameRunning = false;
+            finalScore.textContent = score;
+            gameOverDisplay.style.display = "block";
+        }
+
+        // Restart game
+        function restartGame() {
+            startGame();
+        }
+
+        // Event listeners
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                jump();
+            }
+        });
+
+        document.addEventListener("click", () => {
+            jump();
+        });
+
+        // Start the game on load
+        startGame();
+    </script>
+
+    <style>
+        /* General Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #87ceeb, #f4f4f4);
+            color: #333;
+            text-align: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Game Container */
+        .game-container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Header */
+        header h1 {
+            font-size: 3rem;
+            color: #2c3e50;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        header #tagline {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+
+        /* Score Section */
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .score-board p {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* Game Area */
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #16a085;
+            border: 2px solid #2c3e50;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Player */
+        #player {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #f39c12, #e67e22);
+            border: 2px solid #e74c3c;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s ease-in-out;
+        }
+
+        /* Player Jump Animation */
+        .jump {
+            animation: jump 0.7s ease-out;
+        }
+
+        @keyframes jump {
+            0% {
+                bottom: 50px;
+            }
+            50% {
+                bottom: 200px;
+            }
+            100% {
+                bottom: 50px;
+            }
+        }
+
+        /* Train Style */
+        .train {
+            position: absolute;
+            bottom: 50px;
+            left: -80px;
+            width: 80px;
+            height: 40px;
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Train Movement Animation */
+        @keyframes train-move {
+            0% {
+                left: -80px;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* Game Over */
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10;
+        }
+
+        #game-over h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        #game-over button {
+            background: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+            transition: background 0.3s ease;
+        }
+
+        #game-over button:hover {
+            background: #2980b9;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Catcher</title>
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom, #74ebd5, #acb6e5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    .game-container {
+      text-align: center;
+      max-width: 100%;
+      display: none;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 36px;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #fff;
+      border: 3px solid #333;
+      border-radius: 10px;
+      box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .instructions {
+      margin-top: 15px;
+      color: #555;
+      font-size: 18px;
+    }
+
+    .loading-screen {
+      font-size: 30px;
+      color: #333;
+      text-align: center;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .buttons {
+      margin-top: 20px;
+    }
+
+    .button {
+      background-color: #74ebd5;
+      border: none;
+      padding: 10px 20px;
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      margin: 10px;
+      transition: background-color 0.3s;
+    }
+
+    .button:hover {
+      background-color: #acb6e5;
+    }
+
+    .game-over {
+      font-size: 40px;
+      color: red;
+      text-align: center;
+    }
+
+    .signature {
+      font-size: 18px;
+      color: #333;
+      position: absolute;
+      bottom: 10px;
+      text-align: center;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-screen">Loading...</div>
+
+  <div class="game-container">
+    <h1>Color Catcher</h1>
+    <canvas id="gameCanvas"></canvas>
+    <p class="instructions">
+      Use <b>Arrow Keys</b> or <b>Touch</b> to move the bucket!
+    </p>
+    <div class="buttons">
+      <button class="button" id="startButton">Start Game</button>
+      <button class="button" id="restartButton" style="display:none;">Restart Game</button>
+    </div>
+    <div class="signature">Made by Saimon</div>
+  </div>
+
+  <script>
+    // Canvas Setup
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Adjust canvas size dynamically
+    canvas.width = Math.min(window.innerWidth * 0.9, 500);
+    canvas.height = Math.min(window.innerHeight * 0.7, 600);
+
+    // Game Variables
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const bucketWidth = WIDTH * 0.2;
+    const bucketHeight = 20;
+    let bucketX = WIDTH / 2 - bucketWidth / 2;
+    const bucketY = HEIGHT - 50;
+    const bucketSpeed = 10;
+
+    const ballRadius = WIDTH * 0.05;
+    let balls = [];
+    let colors = ["red", "green", "blue", "orange", "purple"];
+    let score = 0;
+    let lives = 3;
+
+    // Touch Controls
+    canvas.addEventListener("touchstart", (e) => {
+      const touchX = e.touches[0].clientX - canvas.offsetLeft;
+      bucketX = touchX - bucketWidth / 2;
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+      const touchX = e.touches[0].clientX - canvas.offsetLeft;
+      bucketX = touchX - bucketWidth / 2;
+    });
+
+    // Keyboard Controls
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" && bucketX > 0) {
+        bucketX -= bucketSpeed;
+      }
+      if (e.key === "ArrowRight" && bucketX < WIDTH - bucketWidth) {
+        bucketX += bucketSpeed;
+      }
+    });
+
+    // Ball Generator
+    function createBall() {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const x = Math.random() * (WIDTH - ballRadius * 2) + ballRadius;
+      const y = -ballRadius * 2;
+      balls.push({ x, y, color });
+    }
+
+    // Draw Bucket
+    function drawBucket() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(bucketX, bucketY, bucketWidth, bucketHeight);
+
+      // Add Shadow to Bucket
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.fillRect(bucketX, bucketY + 5, bucketWidth, 5);
+    }
+
+    // Draw Balls
+    function drawBalls() {
+      balls.forEach((ball) => {
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = ball.color;
+        ctx.fill();
+
+        // Add Glow Effect to Balls
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = ball.color;
+        ctx.closePath();
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    // Ball Movement and Collision Detection
+    function updateBalls() {
+      balls.forEach((ball, index) => {
+        ball.y += 5;
+
+        // Check if the ball hits the bucket
+        if (
+          ball.y + ballRadius > bucketY &&
+          ball.x > bucketX &&
+          ball.x < bucketX + bucketWidth
+        ) {
+          score++;
+          balls.splice(index, 1);
+        }
+
+        // Check if the ball falls out of screen
+        if (ball.y - ballRadius > HEIGHT) {
+          lives--;
+          balls.splice(index, 1);
+        }
+      });
+    }
+
+    // Draw Score and Lives
+    function drawScoreAndLives() {
+      ctx.fillStyle = "black";
+      ctx.font = "20px Arial";
+      ctx.fillText(`Score: ${score}`, 10, 30);
+      ctx.fillText(`Lives: ${lives}`, WIDTH - 100, 30);
+    }
+
+    // Game Over Screen
+    function gameOver() {
+      ctx.fillStyle = "red";
+      ctx.font = "40px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Game Over!", WIDTH / 2, HEIGHT / 2);
+    }
+
+    // Game Loop
+    function gameLoop() {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+      drawBucket();
+      drawBalls();
+      drawScoreAndLives();
+      updateBalls();
+
+      if (lives > 0) {
+        requestAnimationFrame(gameLoop);
+      } else {
+        gameOver();
+        document.getElementById('restartButton').style.display = 'inline-block';
+      }
+    }
+
+    // Start Game
+    function startGame() {
+      score = 0;
+      lives = 3;
+      balls = [];
+      document.querySelector('.game-container').style.display = 'block';
+      document.querySelector('.loading-screen').style.display = 'none';
+      gameLoop();
+      setInterval(createBall, 1000); // Generate balls every second
+    }
+
+    // Restart Game
+    function restartGame() {
+      score = 0;
+      lives = 3;
+      balls = [];
+      document.getElementById('restartButton').style.display = 'none';
+      gameLoop();
+    }
+
+    // Fake Loading Screen (2 seconds delay)
+    setTimeout(() => {
+      document.querySelector('.loading-screen').style.display = 'none';
+      document.querySelector('.game-container').style.display = 'block';
+    }, 2000);
+
+    // Event Listeners for Start and Restart Buttons
+    document.getElementById('startButton').addEventListener('click', startGame);
+    document.getElementById('restartButton').addEventListener('click', restartGame);
+  </script>
+</body>
+</html>

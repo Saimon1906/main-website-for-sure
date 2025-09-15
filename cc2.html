@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Catcher - Version 2</title>
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #74ebd5, #acb6e5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 48px;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      background-color: #f3f3f3;
+      border: 2px solid #000;
+      border-radius: 10px;
+      box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .buttons {
+      margin-top: 30px;
+    }
+
+    .button {
+      background-color: #74ebd5;
+      border: none;
+      padding: 15px 30px;
+      font-size: 22px;
+      cursor: pointer;
+      border-radius: 10px;
+      margin: 10px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .button:hover {
+      background-color: #acb6e5;
+      transform: scale(1.1);
+    }
+
+    .button:active {
+      transform: scale(1);
+    }
+
+    .game-over {
+      font-size: 40px;
+      color: red;
+      text-align: center;
+    }
+
+    .signature {
+      font-size: 18px;
+      color: #333;
+      position: absolute;
+      bottom: 10px;
+      text-align: center;
+      width: 100%;
+    }
+
+    .about-container {
+      display: none;
+      color: #fff;
+      text-align: center;
+    }
+
+    .about-container h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .back-button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 20px;
+      background-color: #74ebd5;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .back-button:hover {
+      background-color: #acb6e5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Menu -->
+  <div class="main-menu">
+    <h1>Color Catcher - Version 2</h1>
+    <div class="buttons">
+      <button class="button" id="startButton">Start Game</button>
+      <button class="button" id="aboutButton">About</button>
+    </div>
+  </div>
+
+  <!-- Game Container -->
+  <div class="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <p style="color: white; font-size: 20px;">Use <b>Arrow Keys</b> or <b>Touch</b> to move the bucket!</p>
+    <div class="buttons">
+      <button class="button" id="restartButton" style="display:none;">Restart Game</button>
+    </div>
+    <div class="signature">Made by Saimon</div>
+  </div>
+
+  <!-- About Container -->
+  <div class="about-container">
+    <h2>About Color Catcher</h2>
+    <p>Version 2.0 - Made by Saimon</p>
+    <button class="back-button" id="backButton">Back to Menu</button>
+  </div>
+
+  <script>
+    // Canvas Setup
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Adjust canvas size dynamically
+    canvas.width = Math.min(window.innerWidth * 0.9, 500);
+    canvas.height = Math.min(window.innerHeight * 0.7, 600);
+
+    // Game Variables
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const bucketWidth = WIDTH * 0.2;
+    const bucketHeight = 20;
+    let bucketX = WIDTH / 2 - bucketWidth / 2;
+    const bucketY = HEIGHT - 50;
+    const bucketSpeed = 10;
+
+    const ballRadius = WIDTH * 0.05;
+    let balls = [];
+    let colors = ["red", "green", "blue", "orange", "purple"];
+    let score = 0;
+    let lives = 3;
+
+    // Touch Controls
+    canvas.addEventListener("touchstart", (e) => {
+      const touchX = e.touches[0].clientX - canvas.offsetLeft;
+      bucketX = touchX - bucketWidth / 2;
+    });
+
+    canvas.addEventListener("touchmove", (e) => {
+      const touchX = e.touches[0].clientX - canvas.offsetLeft;
+      bucketX = touchX - bucketWidth / 2;
+    });
+
+    // Keyboard Controls
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" && bucketX > 0) {
+        bucketX -= bucketSpeed;
+      }
+      if (e.key === "ArrowRight" && bucketX < WIDTH - bucketWidth) {
+        bucketX += bucketSpeed;
+      }
+    });
+
+    // Ball Generator
+    function createBall() {
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const x = Math.random() * (WIDTH - ballRadius * 2) + ballRadius;
+      const y = -ballRadius * 2;
+      balls.push({ x, y, color });
+    }
+
+    // Draw Bucket
+    function drawBucket() {
+      ctx.fillStyle = "black";
+      ctx.fillRect(bucketX, bucketY, bucketWidth, bucketHeight);
+
+      // Add Shadow to Bucket
+      ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+      ctx.fillRect(bucketX, bucketY + 5, bucketWidth, 5);
+    }
+
+    // Draw Balls
+    function drawBalls() {
+      balls.forEach((ball) => {
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = ball.color;
+        ctx.fill();
+
+        // Add Glow Effect to Balls
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = ball.color;
+        ctx.closePath();
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    // Ball Movement and Collision Detection
+    function updateBalls() {
+      balls.forEach((ball, index) => {
+        ball.y += 5;
+
+        // Check if the ball hits the bucket
+        if (
+          ball.y + ballRadius > bucketY &&
+          ball.x > bucketX &&
+          ball.x < bucketX + bucketWidth
+        ) {
+          score++;
+          balls.splice(index, 1);
+        }
+
+        // Check if the ball falls out of screen
+        if (ball.y - ballRadius > HEIGHT) {
+          lives--;
+          balls.splice(index, 1);
+        }
+      });
+    }
+
+    // Draw Score and Lives
+    function drawScoreAndLives() {
+      ctx.fillStyle = "black";
+      ctx.font = "20px Arial";
+      ctx.fillText(`Score: ${score}`, 10, 30);
+      ctx.fillText(`Lives: ${lives}`, WIDTH - 100, 30);
+    }
+
+    // Game Over Screen
+    function gameOver() {
+      ctx.fillStyle = "red";
+      ctx.font = "40px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Game Over!", WIDTH / 2, HEIGHT / 2);
+    }
+
+    // Game Loop
+    function gameLoop() {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+      drawBucket();
+      drawBalls();
+      drawScoreAndLives();
+      updateBalls();
+
+      if (lives > 0) {
+        requestAnimationFrame(gameLoop);
+      } else {
+        gameOver();
+        document.getElementById('restartButton').style.display = 'inline-block';
+      }
+    }
+
+    // Start Game
+    function startGame() {
+      score = 0;
+      lives = 3;
+      balls = [];
+      document.querySelector('.main-menu').style.display = 'none';
+      document.querySelector('.game-container').style.display = 'block';
+      gameLoop();
+      setInterval(createBall, 1000); // Generate balls every second
+    }
+
+    // Restart Game
+    function restartGame() {
+      score = 0;
+      lives = 3;
+      balls = [];
+      gameLoop();
+      setInterval(createBall, 1000); // Generate balls every second
+    }
+
+    // Show and hide screens
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const aboutButton = document.getElementById('aboutButton');
+    const backButton = document.getElementById('backButton');
+    const mainMenu = document.querySelector('.main-menu');
+    const gameContainer = document.querySelector('.game-container');
+    const aboutContainer = document.querySelector('.about-container');
+
+    startButton.addEventListener('click', startGame);
+    restartButton.addEventListener('click', restartGame);
+
+    aboutButton.addEventListener('click', () => {
+      mainMenu.style.display = 'none';
+      aboutContainer.style.display = 'block';
+    });
+
+    backButton.addEventListener('click', () => {
+      aboutContainer.style.display = 'none';
+      mainMenu.style.display = 'block';
+    });
+  </script>
+</body>
+</html>

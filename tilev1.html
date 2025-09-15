@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tile Clicker Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Tile Clicker</h1>
+    <div id="startScreen">
+      <button id="startButton">Start Game</button>
+    </div>
+    <div id="gameScreen" class="hidden">
+      <div class="game-board" id="gameBoard"></div>
+      <div class="info">
+        <p>Score: <span id="score">0</span></p>
+        <p>Lives: <span id="lives">5</span></p>
+      </div>
+    </div>
+    <div id="gameOverScreen" class="hidden">
+      <h2>Game Over</h2>
+      <p>Your Score: <span id="finalScore">0</span></p>
+      <p>Saimon's Best: 700</p>
+      <button id="restartButton">Restart Game</button>
+    </div>
+  </div>
+  
+  
+  <style>
+  
+  body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #121212;
+  color: #ffffff;
+  margin: 0;
+  padding: 20px;
+}
+
+h1, h2 {
+  margin: 10px 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hidden {
+  display: none;
+}
+
+.game-board {
+  display: grid;
+  grid-template-columns: repeat(5, 100px);
+  grid-template-rows: repeat(5, 100px);
+  grid-gap: 10px;
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.tile {
+  width: 100px;
+  height: 100px;
+  background-color: #333;
+  border: 2px solid #444;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.tile.active {
+  background-color: #1e90ff;
+}
+
+.info {
+  margin: 20px 0;
+  font-size: 1.2rem;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  background-color: #1e90ff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #4682b4;
+}
+
+  
+  </style>
+  
+  
+  
+  
+  
+  <script>
+  
+  
+ const startButton = document.getElementById('startButton');
+const restartButton = document.getElementById('restartButton');
+const startScreen = document.getElementById('startScreen');
+const gameScreen = document.getElementById('gameScreen');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const gameBoard = document.getElementById('gameBoard');
+const scoreDisplay = document.getElementById('score');
+const livesDisplay = document.getElementById('lives');
+const finalScoreDisplay = document.getElementById('finalScore');
+
+let tiles = [];
+let score = 0;
+let lives = 5;
+let streak = 0;
+let activeTile = null;
+let gameInterval = null;
+let tileDisappearTimeout = null;
+
+const MAX_TILES = 25; // 5x5 grid
+const TILE_APPEAR_TIME = 700; // milliseconds
+const TILE_DISAPPEAR_TIME = 600; // milliseconds
+const DEVELOPER_BEST_SCORE = 2340;
+
+function createTiles() {
+  gameBoard.innerHTML = '';
+  tiles = [];
+  for (let i = 0; i < MAX_TILES; i++) {
+    const tile = document.createElement('div');
+    tile.classList.add('tile');
+    tile.dataset.index = i;
+    tile.addEventListener('click', handleTileClick);
+    gameBoard.appendChild(tile);
+    tiles.push(tile);
+  }
+}
+
+function handleTileClick(event) {
+  const tileIndex = event.target.dataset.index;
+  if (activeTile === tileIndex) {
+    score += 10 + streak * 5;
+    streak++;
+    updateScore();
+    deactivateTile(true); // True indicates the tile was clicked
+  }
+}
+
+function activateRandomTile() {
+  deactivateTile(false); // False indicates the tile was missed
+  const randomIndex = Math.floor(Math.random() * tiles.length);
+  activeTile = randomIndex.toString();
+  tiles[randomIndex].classList.add('active');
+
+  // Set a timeout to automatically deactivate the tile if not clicked
+  tileDisappearTimeout = setTimeout(() => {
+    deactivateTile(false); // Tile was missed
+  }, TILE_DISAPPEAR_TIME);
+}
+
+function deactivateTile(clicked) {
+  if (activeTile !== null) {
+    tiles[activeTile].classList.remove('active');
+    if (!clicked) {
+      streak = 0; // Reset streak if tile was missed
+      loseLife();
+    }
+    activeTile = null;
+  }
+  clearTimeout(tileDisappearTimeout);
+}
+
+function updateScore() {
+  scoreDisplay.textContent = score;
+}
+
+function loseLife() {
+  lives--;
+  if (lives < 0) return; // Prevent lives from going negative
+  livesDisplay.textContent = lives;
+  if (lives === 0) {
+    endGame();
+  }
+}
+
+function startGame() {
+  score = 0;
+  lives = 5;
+  streak = 0;
+  activeTile = null;
+  updateScore();
+  livesDisplay.textContent = lives;
+
+  startScreen.classList.add('hidden');
+  gameOverScreen.classList.add('hidden');
+  gameScreen.classList.remove('hidden');
+
+  createTiles();
+
+  gameInterval = setInterval(() => {
+    if (activeTile === null) {
+      activateRandomTile();
+    }
+  }, TILE_APPEAR_TIME);
+}
+
+function endGame() {
+  clearInterval(gameInterval);
+  deactivateTile(false);
+  finalScoreDisplay.textContent = score;
+  document.querySelector('#gameOverScreen p:nth-of-type(2)').textContent = `Saimon's Best: ${DEVELOPER_BEST_SCORE}`;
+  gameScreen.classList.add('hidden');
+  gameOverScreen.classList.remove('hidden');
+}
+
+startButton.addEventListener('click', startGame);
+restartButton.addEventListener('click', startGame);
+
+
+  
+  
+  </script>
+  
+  
+  
+  
+  
+</body>
+</html>

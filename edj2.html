@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endless Train Jumper (Enhanced)</title>
+    <style>
+        /* General Reset */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #87CEEB; /* Sky Blue Theme */
+        }
+
+        /* UI Styling */
+        .ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
+            z-index: 1000;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid white;
+        }
+
+        .game-over button {
+            background: #3498db;
+            color: #fff;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .game-over button:hover {
+            background: #2980b9;
+        }
+
+        /* Jump Button Styling */
+        .jump-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #ff7e5f, #feb47b);
+            border: none;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .jump-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .jump-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Made By */
+        .made-by {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Menu Screen */
+        .menu-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-family: Arial, sans-serif;
+            position: absolute;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .menu-screen button {
+            background: linear-gradient(45deg, #ff7e5f, #feb47b);
+            border: none;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 12px;
+            margin: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .menu-screen button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .menu-screen button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* About Modal */
+        .about-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 30px;
+            border-radius: 12px;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .about-modal button {
+            background: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .about-modal button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Screen -->
+    <div class="menu-screen" id="menu-screen">
+        <h1>Endless Train Jumper</h1>
+        <button onclick="startGame()">Start</button>
+        <button onclick="showAbout()">About</button>
+    </div>
+
+    <!-- About Modal -->
+    <div class="about-modal" id="about-modal">
+        <h2>About the Game</h2>
+        <p>This game is made by Saimon.</p>
+        <p>Version: 2.0</p>
+        <p>Contact: imsaimonrifayt@gmail.com</p>
+        <button onclick="closeAbout()">Close</button>
+    </div>
+
+    <!-- Game UI -->
+    <div class="ui">
+        <div class="score">Score: <span id="score">0</span></div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div class="game-over" id="game-over">
+        <h1>Game Over!</h1>
+        <p>Your Score: <span id="final-score">0</span></p>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+
+    <!-- Jump Button -->
+    <button class="jump-button" style="display: none;" onclick="jump()">JUMP</button>
+
+    <!-- Made By -->
+    <div class="made-by" style="display: none;">Made by Saimon</div>
+
+    <!-- Include Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <!-- Include Sky Library -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/objects/Sky.js"></script>
+    <script>
+        // Start Game Function
+        function startGame() {
+            document.getElementById("menu-screen").style.display = "none";
+            document.querySelector(".ui").style.display = "block";
+            document.querySelector(".jump-button").style.display = "block";
+            document.querySelector(".made-by").style.display = "block";
+            animate();
+        }
+
+        // About Modal Functions
+        function showAbout() {
+            document.getElementById("about-modal").style.display = "block";
+        }
+
+        function closeAbout() {
+            document.getElementById("about-modal").style.display = "none";
+        }
+
+        // Scene, Camera, Renderer Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true; // Enable shadows
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 2);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        // Sunlight helper
+        const sunHelper = new THREE.DirectionalLightHelper(directionalLight, 5);
+        scene.add(sunHelper);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        // Add Sky
+        const sky = new THREE.Sky();
+        sky.scale.setScalar(450000);
+        scene.add(sky);
+
+        const sun = new THREE.Vector3();
+        sun.set(0, 1, -1).normalize();
+        sky.material.uniforms["sunPosition"].value.copy(sun);
+
+        // Ground
+        const groundTexture = new THREE.TextureLoader().load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+        groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+        groundTexture.repeat.set(20, 20);
+
+        const groundMaterial = new THREE.MeshStandardMaterial({ map: groundTexture });
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true; // Enable shadow receiving
+        scene.add(ground);
+
+        // Player
+        const playerGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.y = 0.5;
+        player.castShadow = true; // Enable shadow casting
+        scene.add(player);
+
+        // Obstacles
+        const obstacles = [];
+        function createObstacle() {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+            const obstacle = new THREE.Mesh(geometry, material);
+            obstacle.position.set(10, 0.5, Math.random() * 10 - 5);
+            obstacle.castShadow = true; // Enable shadow casting
+            scene.add(obstacle);
+            obstacles.push(obstacle);
+        }
+
+        // Player Movement
+        let jumping = false;
+        function jump() {
+            if (!jumping) {
+                jumping = true;
+                player.position.y += 2;
+                setTimeout(() => (player.position.y -= 2), 500);
+                setTimeout(() => (jumping = false), 700);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') jump();
+        });
+
+        // Game Variables
+        let score = 0;
+        let gameRunning = true;
+
+        // Game Over Function
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over').style.display = 'block';
+        }
+
+        function restartGame() {
+            window.location.reload();
+        }
+
+        // Game Loop
+        function animate() {
+            if (gameRunning) {
+                renderer.render(scene, camera);
+
+                // Move ground texture in the correct direction
+                groundTexture.offset.x += 0.01;
+
+                // Move obstacles
+                obstacles.forEach((obstacle, index) => {
+                    obstacle.position.x -= 0.1;
+                    if (obstacle.position.x < -10) {
+                        scene.remove(obstacle);
+                        obstacles.splice(index, 1);
+                        score++;
+                        document.getElementById('score').textContent = score;
+                    }
+
+                    // Collision Detection
+                    const distance = player.position.distanceTo(obstacle.position);
+                    if (distance < 1) {
+                        gameOver();
+                    }
+                });
+
+                // Add new obstacles
+                if (Math.random() < 0.02) createObstacle();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Camera Position
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 0, 0);
+    </script>
+</body>
+</html>

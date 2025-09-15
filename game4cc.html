@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Catcher</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #1e3c72, #2a5298);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        h1 {
+            font-size: 3rem;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            margin-bottom: 20px;
+        }
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .game-button {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            border: none;
+            border-radius: 50px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .game-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(255, 75, 43, 0.6);
+        }
+        .game-button:active {
+            transform: scale(1);
+            box-shadow: 0 3px 10px rgba(255, 75, 43, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Catcher</h1>
+    <div class="button-container">
+        <button class="game-button" onclick="window.location.href='cc1.html'">Play Version 1</button>
+        <button class="game-button" onclick="window.location.href='cc2.html'">Play Version 2</button>
+        <button class="game-button" onclick="window.location.href='cc3.html'">Play Version 3</button>
+    </div><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br>
+    made by saimon
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe - Ultra Graphics Edition</title>
+</head>
+<body>
+  <h1>Tic Tac Toe - Ultra Graphics Mode</h1>
+  <div class="game-board" id="gameBoard"></div>
+  <p id="status">Player X's Turn</p>
+  <button id="resetButton">Restart Game</button>
+
+  <script>
+    const gameBoard = document.getElementById('gameBoard');
+    const statusText = document.getElementById('status');
+    const resetButton = document.getElementById('resetButton');
+
+    let board = Array(9).fill(null);
+    let currentPlayer = 'X';
+    let isGameActive = true;
+
+    const winningCombinations = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    function createBoard() {
+      gameBoard.innerHTML = '';
+      board.forEach((cell, index) => {
+        const cellDiv = document.createElement('div');
+        cellDiv.classList.add('cell');
+        cellDiv.dataset.index = index;
+        cellDiv.addEventListener('click', handleCellClick);
+        gameBoard.appendChild(cellDiv);
+      });
+    }
+
+    function handleCellClick(event) {
+      const cellIndex = event.target.dataset.index;
+      if (!board[cellIndex] && isGameActive) {
+        board[cellIndex] = currentPlayer;
+        event.target.textContent = currentPlayer;
+        event.target.classList.add('disabled');
+        checkWinner();
+        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        statusText.textContent = isGameActive ? `Player ${currentPlayer}'s Turn` : statusText.textContent;
+      }
+    }
+
+    function checkWinner() {
+      for (const combination of winningCombinations) {
+        const [a, b, c] = combination;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          statusText.textContent = `Player ${board[a]} Wins!`;
+          highlightWinningCells(combination);
+          isGameActive = false;
+          return;
+        }
+      }
+      if (!board.includes(null)) {
+        statusText.textContent = 'It\'s a Draw!';
+        isGameActive = false;
+      }
+    }
+
+    function highlightWinningCells(combination) {
+      combination.forEach(index => {
+        const cell = document.querySelector(`[data-index='${index}']`);
+        cell.classList.add('winner');
+      });
+    }
+
+    resetButton.addEventListener('click', () => {
+      board = Array(9).fill(null);
+      currentPlayer = 'X';
+      isGameActive = true;
+      statusText.textContent = "Player X's Turn";
+      createBoard();
+    });
+
+    createBoard();
+  </script>
+
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      background: radial-gradient(circle, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 5rem;
+      color: #ff0099;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px #ff0099, 0 0 40px #ff0099, 0 0 60px #ff0099, 0 0 80px #ff0099;
+      animation: neonFlicker 2s infinite alternate;
+    }
+
+    @keyframes neonFlicker {
+      0% {
+        text-shadow: 0 0 20px #ff0099, 0 0 40px #ff0099, 0 0 60px #ff0099, 0 0 80px #ff0099;
+      }
+      50% {
+        text-shadow: 0 0 40px #ff0099, 0 0 80px #ff0099, 0 0 120px #ff0099, 0 0 160px #ff0099;
+      }
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 150px);
+      grid-gap: 20px;
+      justify-content: center;
+      margin: 30px auto;
+      perspective: 1000px;
+      transform-style: preserve-3d;
+    }
+
+    .cell {
+      width: 150px;
+      height: 150px;
+      background: linear-gradient(135deg, #ff4e50, #f9d423);
+      border: 4px solid #333;
+      box-shadow: 0 0 15px #ff4e50, 0 0 30px #f9d423;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 10px #000;
+      cursor: pointer;
+      transition: transform 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+      transform: rotateY(0);
+    }
+
+    .cell:hover {
+      transform: rotateY(360deg) scale(1.2);
+      box-shadow: 0 0 30px #ff4e50, 0 0 60px #f9d423, 0 0 90px #ff4e50;
+    }
+
+    .cell.disabled {
+      pointer-events: none;
+      background: #24243e;
+      color: #ff4e50;
+      animation: cellPop 0.5s ease-out;
+    }
+
+    .cell.winner {
+      background: #00ff00;
+      animation: glowWinner 1.5s infinite alternate;
+    }
+
+    @keyframes glowWinner {
+      0% {
+        box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00;
+      }
+      100% {
+        box-shadow: 0 0 40px #00ff00, 0 0 80px #00ff00;
+      }
+    }
+
+    @keyframes cellPop {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.5);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    #status {
+      font-size: 2rem;
+      margin: 30px;
+      text-shadow: 0 0 10px #fff, 0 0 20px #ff4e50;
+    }
+
+    #resetButton {
+      padding: 15px 40px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(135deg, #ff0099, #493240);
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #ff0099, 0 0 40px #493240;
+      transition: transform 0.3s ease-in-out;
+    }
+
+    #resetButton:hover {
+      transform: scale(1.2) rotate(-10deg);
+      box-shadow: 0 0 30px #ff0099, 0 0 60px #493240;
+    }
+  </style>
+</body>
+</html>

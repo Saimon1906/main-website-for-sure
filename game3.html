@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endless Jumper</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(to bottom, #1e3c72, #2a5298);
+            color: #fff;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-btn {
+            padding: 10px 20px;
+            background: #0f8bf1;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, background 0.3s;
+        }
+        .option-btn:hover {
+            transform: scale(1.1);
+            background: #0c6bcf;
+        }
+    </style>
+</head>
+<body>
+    <h1>Endless Jumper</h1>
+    <div class="options">
+        <button class="option-btn" onclick="navigateTo('edj3.html')">Version 3 coming soon</button>
+        <button class="option-btn" onclick="navigateTo('edj2.html')">Version 2</button>
+        <button class="option-btn" onclick="navigateTo('edj1.html')">Version 1</button>
+        <!-- নতুন ভার্সনের জন্য শুধু নিচের লাইনের মতো কোড অ্যাড করুন -->
+        <!-- <button class="option-btn" onclick="navigateTo('new_version.html')">New Version</button> -->
+    </div>
+
+    <script>
+        function navigateTo(version) {
+            window.location.href = version;
+        }
+    </script>
+</body>
+</html>

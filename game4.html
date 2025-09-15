@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colour Catcher</title>
+    <!-- Google Font for Stylish Text -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #121212;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1a1a1a;
+            padding: 20px;
+            text-align: center;
+            font-size: 2.5em;
+            color: #ffcc00;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
+        }
+        .game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            overflow-y: scroll;
+            padding: 20px;
+        }
+        .game-box {
+            background-color: #333;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+        }
+        .game-box:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 204, 0, 1);
+        }
+        .game-box a {
+            text-decoration: none;
+            color: #ffcc00;
+            font-size: 1.5em;
+        }
+        .game-box a:hover {
+            color: #fff;
+        }
+        .scroll-container {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding: 20px;
+            gap: 10px;
+            align-items: center;
+        }
+        .game-box img {
+            width: 200px;
+            height: 200px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        .game-box img:hover {
+            transform: scale(1.1);
+        }
+        .game-box p {
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>Colour Catcher Game</header>
+    <div class="game-container">
+        <div class="scroll-container">
+            <div class="game-box">
+                <img src="https://via.placeholder.com/200x200/ffcc00/000000?text=CC1" alt="CC1">
+                <p>Version 1</p>
+                <a href="cc1.html" target="_blank">Play Version 1</a>
+            </div>
+            <div class="game-box">
+                <img src="https://via.placeholder.com/200x200/ff3333/000000?text=CC2" alt="CC2">
+                <p>Version 2</p>
+                <a href="cc2.html" target="_blank">Play Version 2</a>
+            </div>
+            <div class="game-box">
+                <img src="https://via.placeholder.com/200x200/33cc33/000000?text=CC3" alt="CC3">
+                <p>Version 3</p>
+                <a href="cc3.html" target="_blank">Play Version 3</a>
+            </div>
+            <div class="game-box">
+                <img src="https://via.placeholder.com/200x200/3399ff/000000?text=CC4" alt="CC4">
+                <p>Version 4</p>
+                <a href="cc4.html" target="_blank">Play Version 4</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

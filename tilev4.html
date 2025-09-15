@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tile Clicker Game</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    /* Fonts and colors */
+    body {
+      font-family: 'Roboto', sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #1e90ff, #4682b4);
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1, h2 {
+      margin: 10px 0;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(5, 120px);
+      grid-template-rows: repeat(5, 120px);
+      grid-gap: 15px;
+      justify-content: center;
+      margin: 20px auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px;
+      border-radius: 15px;
+    }
+
+    .tile {
+      width: 120px;
+      height: 120px;
+      background-color: #333;
+      border: 2px solid #444;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+    }
+
+    .tile.active {
+      background-color: #1e90ff;
+      transform: scale(1.1);
+    }
+
+    .info {
+      margin: 20px 0;
+      font-size: 1.2rem;
+    }
+
+    button {
+      padding: 12px 25px;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #4682b4;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+
+    button:hover {
+      background-color: #5f9ea0;
+      transform: scale(1.05);
+    }
+
+    p i {
+      margin-right: 5px;
+    }
+
+    #gameOverScreen h2 {
+      color: #ff007f;
+    }
+  </style>
+
+</head>
+<body>
+
+  <div class="container">
+    <h1><i class="fas fa-gamepad"></i> Tile Clicker</h1>
+
+    <div id="startScreen">
+      <button id="startButton">Start Game</button>
+    </div>
+
+    <div id="gameScreen" class="hidden">
+      <div class="game-board" id="gameBoard"></div>
+      <div class="info">
+        <p><i class="fas fa-star"></i> Score: <span id="score">0</span></p>
+        <p><i class="fas fa-heart"></i> Lives: <span id="lives">5</span></p>
+      </div>
+    </div>
+
+    <div id="gameOverScreen" class="hidden">
+      <h2><i class="fas fa-skull-crossbones"></i> Game Over</h2>
+      <p>Your Score: <span id="finalScore">0</span></p>
+      <button id="restartButton">Restart Game</button>
+    </div>
+  </div>
+
+  <script>
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const startScreen = document.getElementById('startScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const gameBoard = document.getElementById('gameBoard');
+    const scoreDisplay = document.getElementById('score');
+    const livesDisplay = document.getElementById('lives');
+    const finalScoreDisplay = document.getElementById('finalScore');
+
+    let tiles = [];
+    let score = 0;
+    let lives = 5;
+    let activeTile = null;
+    let gameInterval = null;
+    let tileDisappearTimeout = null;
+
+    const MAX_TILES = 25; // 5x5 grid
+    const TILE_APPEAR_TIME = 700; // milliseconds
+    const TILE_DISAPPEAR_TIME = 600; // milliseconds
+
+    function createTiles() {
+      gameBoard.innerHTML = '';
+      tiles = [];
+      for (let i = 0; i < MAX_TILES; i++) {
+        const tile = document.createElement('div');
+        tile.classList.add('tile');
+        tile.dataset.index = i;
+        tile.addEventListener('click', handleTileClick);
+        gameBoard.appendChild(tile);
+        tiles.push(tile);
+      }
+    }
+
+    function handleTileClick(event) {
+      const tileIndex = event.target.dataset.index;
+      if (activeTile === tileIndex) {
+        score += 10;
+        updateScore();
+        deactivateTile(true);
+      }
+    }
+
+    function activateRandomTile() {
+      deactivateTile(false);
+      const randomIndex = Math.floor(Math.random() * tiles.length);
+      activeTile = randomIndex.toString();
+      tiles[randomIndex].classList.add('active');
+      tileDisappearTimeout = setTimeout(() => {
+        deactivateTile(false);
+      }, TILE_DISAPPEAR_TIME);
+    }
+
+    function deactivateTile(clicked) {
+      if (activeTile !== null) {
+        tiles[activeTile].classList.remove('active');
+        if (!clicked) {
+          loseLife();
+        }
+        activeTile = null;
+      }
+      clearTimeout(tileDisappearTimeout);
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = score;
+    }
+
+    function loseLife() {
+      lives--;
+      livesDisplay.textContent = lives;
+      if (lives === 0) {
+        endGame();
+      }
+    }
+
+    function startGame() {
+      score = 0;
+      lives = 5;
+      activeTile = null;
+      updateScore();
+      livesDisplay.textContent = lives;
+
+      startScreen.classList.add('hidden');
+      gameOverScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+
+      createTiles();
+
+      gameInterval = setInterval(() => {
+        if (activeTile === null) {
+          activateRandomTile();
+        }
+      }, TILE_APPEAR_TIME);
+    }
+
+    function endGame() {
+      clearInterval(gameInterval);
+      deactivateTile(false);
+      finalScoreDisplay.textContent = score;
+      gameScreen.classList.add('hidden');
+      gameOverScreen.classList.remove('hidden');
+    }
+
+    startButton.addEventListener('click', startGame);
+    restartButton.addEventListener('click', startGame);
+  </script>
+
+</body>
+</html>
