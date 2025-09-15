@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saimon BD Creation Hub</title>
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
+  
+  <!-- 3D / Animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/simplex-noise/dist/simplex-noise.min.js"></script>
+  <!-- three.js postprocessing (matching r128) -->
+  <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+  <style>
+    :root{
+      /* TIP: Adjust theme colors here. Change --accent/--accent-2/--accent-3 for brand feel */
+      --bg-1:#0b0c10; /* deep */
+      --bg-2:#1b1e24; /* card */
+      --glass:rgba(255,255,255,0.08);
+      --text:#f5f7fa;
+      --muted:#a6b1c0;
+      --accent:#FFD700; /* gold */
+      --accent-2:#FF5E00; /* warm orange */
+      --accent-3:#7F5AF0; /* violet */
+      --shadow:0 8px 24px rgba(0,0,0,.45);
+      --radius:18px;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif;
+      color:var(--text);
+      background: radial-gradient(1200px 800px at 10% 10%, rgba(255, 215, 0, 0.08), transparent 60%),
+                  radial-gradient(900px 700px at 90% 20%, rgba(127, 90, 240, 0.08), transparent 60%),
+                  linear-gradient(135deg, #0f0f10 0%, #121316 20%, #0b0c10 100%);
+      overflow-x:hidden;
+    }
+
+    /* Canvas background */
+    #bg-canvas{position:fixed;inset:0;z-index:-2;width:100%;height:100%;display:block}
+    .vignette{position:fixed;inset:0;z-index:-1;pointer-events:none; background:radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.55) 100%)}
+
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .topbar{max-width:1200px;margin:auto;padding:20px 16px; display:flex; align-items:center; justify-content:space-between; gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand i{font-size:28px;color:var(--accent); filter: drop-shadow(0 0 12px rgba(255,215,0,.65));}
+    .brand h1{font-size:clamp(1.4rem,2.8vw,2.2rem); font-weight:800; letter-spacing:0.5px; color:var(--text)}
+    .brand .shine{background: linear-gradient(90deg, var(--accent), #fff, var(--accent-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:0 0 18px rgba(255,215,0,.25)}
+
+    nav{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      padding:0 16px 16px; max-width:1200px; margin:0 auto;
+    }
+    .menu-item{
+      padding:10px 16px; border-radius:999px; font-weight:600; letter-spacing:0.3px;
+      color:var(--text); border:1px solid rgba(255,255,255,.12);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      transition: transform .2s ease, box-shadow .3s ease, background .3s ease;
+      cursor:pointer; user-select:none; backdrop-filter: blur(8px);
+    }
+    .menu-item:hover{ transform: translateY(-2px) scale(1.02); box-shadow: var(--shadow); }
+    .menu-item.active{ outline:2px solid var(--accent); color:#111; background:linear-gradient(180deg, var(--accent), #ffb300) }
+
+    main{max-width:1200px;margin:24px auto;padding:0 16px 64px;}
+
+    section{ display:none; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.12); border-radius: var(--radius); padding:24px; box-shadow:var(--shadow); backdrop-filter: blur(8px); }
+    section.active{ display:block; animation:fadeIn .5s ease both }
+
+    h2{font-size:clamp(1.3rem,2.2vw,1.8rem); letter-spacing:0.4px; margin-bottom:14px}
+    p.lead{color:var(--muted); margin-top:6px}
+
+    .search-wrap{display:flex; align-items:center; gap:10px; margin:16px 0 6px}
+    .search-bar{
+      flex:1; padding:12px 16px; border-radius:14px; border:1px solid rgba(255,255,255,.14);
+      background:#121318; color:var(--text); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+      outline:none; font-size:0.98rem; transition: box-shadow .2s ease, transform .1s ease;
+    }
+    .search-bar:focus{ box-shadow:0 0 0 2px var(--accent); transform: translateY(-1px) }
+
+    .content-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:18px; margin-top:18px }
+    .content-item{
+      position:relative; overflow:hidden; padding:18px; border-radius:16px; cursor:pointer; user-select:none;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.12); transition: transform .2s ease, box-shadow .3s ease, border-color .2s ease;
+    }
+    .content-item:before{content:""; position:absolute; inset:-2px; border-radius:20px; padding:2px; background: conic-gradient(from 180deg at 50% 50%, rgba(255,215,0,.4), rgba(127,90,240,.4), rgba(255,94,0,.4), rgba(255,215,0,.4)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity:.0; transition:opacity .3s}
+    .content-item:hover{ transform: translateY(-4px); box-shadow:var(--shadow); border-color: rgba(255,215,0,.45) }
+    .content-item:hover:before{ opacity:.9 }
+    .content-item .icon{font-size:26px; margin-bottom:12px; color:var(--accent)}
+    .content-item h3{font-size:1.05rem; font-weight:700}
+    .content-item .sub{ margin-top:6px; color:var(--muted); font-size:.9rem }
+
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; font-weight:600; letter-spacing:.3px; background:rgba(255,215,0,.12); border:1px solid rgba(255,215,0,.45); color:var(--accent)}
+
+    footer{ position:relative; z-index:10; max-width:1200px; margin:16px auto 40px; padding:12px 16px; color:var(--muted); display:flex; justify-content:center; }
+    footer .bar{ width:100%; border-radius:14px; text-align:center; padding:14px; background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.12) }
+
+    @keyframes fadeIn{from{opacity:0; transform: translateY(8px)} to{opacity:1; transform:none}}
+      /* Nav underline indicator (moves to active tab) */
+    #nav-underline{ position:absolute; bottom:8px; height:3px; border-radius:999px; left:0; width:0;
+      background: linear-gradient(90deg, var(--accent), var(--accent-3), var(--accent-2));
+      box-shadow: 0 0 18px rgba(255,215,0,.35); transition: all .35s cubic-bezier(.22,1,.36,1); }
+    @media (max-width:720px){ #nav-underline{ display:none; } }
+  </style>
+</head>
+<body>
+  <!-- Procedural 3D background -->
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <i class="fa-solid fa-star"></i>
+        <h1><span class="shine">Saimon BD</span> Creation Hub</h1>
+      </div>
+      
+    </div>
+    <nav>
+      <div class="menu-item active" data-target="fun">Fun</div>
+      <div class="menu-item" data-target="games">Games</div>
+      <div class="menu-item" data-target="contact">Contact</div>
+      <div class="menu-item" data-target="about">About</div>
+      <div id="nav-underline" aria-hidden="true"></div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- FUN -->
+    <section id="fun" class="active" aria-label="Fun section">
+      <h2>Fun <span class="pill"><i class="fa-solid fa-wand-magic-sparkles"></i> Fresh picks</span></h2>
+      <p class="lead">Short stories and interactive goodies.</p>
+      <div class="search-wrap">
+        <input type="text" id="fun-search" class="search-bar" placeholder="Search Fun Content..." onkeyup="searchContent('fun')" />
+      </div>
+      <div class="content-grid" id="fun-list">
+        <!-- Fallback (will be replaced by JSON render). Keeping to preserve behavior if JS disabled) -->
+        <div class="content-item" onclick="openStory('story1.html')">
+          <div class="icon"><i class="fa-solid fa-sparkles"></i></div>
+          <h3>The Glow of Hope</h3>
+          <div class="sub">Story</div>
+        </div>
+        <div class="content-item" onclick="openStory('story2.html')">
+          <div class="icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <h3>coming soon</h3>
+          <div class="sub">Story</div>
+        </div>
+        <div class="content-item" onclick="openStory('story3.html')">
+          <div class="icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <h3>coming soon</h3>
+          <div class="sub">Story</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAMES -->
+    <section id="games" aria-label="Games section">
+      <h2>Games <span class="pill"><i class="fa-solid fa-gamepad"></i> Play now</span></h2>
+      <p class="lead">Quick, fun, and friendly.</p>
+      <div class="search-wrap">
+        <input type="text" id="games-search" class="search-bar" placeholder="Search Games..." onkeyup="searchContent('games')" />
+      </div>
+      <div class="content-grid" id="games-list">
+        <!-- Fallback items (will be replaced by JSON render) -->
+        <div class="content-item" onclick="openGame('game1.html')">
+          <div class="icon"><i class="fa-solid fa-grid-2"></i></div>
+          <h3>Tik Tak Toe</h3>
+          <div class="sub">Game</div>
+        </div>
+        <div class="content-item" onclick="openGame('game2.html')">
+          <div class="icon"><i class="fa-solid fa-square"></i></div>
+          <h3>Clicky Tiles</h3>
+          <div class="sub">Game</div>
+        </div>
+        <div class="content-item" onclick="openGame('game3.html')">
+          <div class="icon"><i class="fa-solid fa-train"></i></div>
+          <h3>Endless train jumper</h3>
+          <div class="sub">Game</div>
+        </div>
+        <div class="content-item" onclick="openGame('game4cc.html')">
+          <div class="icon"><i class="fa-solid fa-droplet"></i></div>
+          <h3>color catcher</h3>
+          <div class="sub">Game</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="contact" aria-label="Contact section">
+      <h2>Contact</h2>
+      <p class="lead">You can reach out to me at <strong>imsaimonrifayt@gmail.com</strong>. I usually reply as fast as can.</p>
+      <div class="content-grid">
+        <div class="content-item" onclick="window.location.href='mailto:imsaimonrifayt@gmail.com'">
+          <div class="icon"><i class="fa-solid fa-envelope"></i></div>
+          <h3>Send an Email</h3>
+          <div class="sub">Tap to open your mail app</div>
+        </div>
+        <div class="content-item" onclick="navigator.clipboard.writeText('imsaimonrifayt@gmail.com');alert('Email copied to clipboard!');">
+          <div class="icon"><i class="fa-solid fa-copy"></i></div>
+          <h3>Copy Email</h3>
+          <div class="sub">One-click copy</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" aria-label="About section">
+      <h2>About</h2>
+      <p class="lead">This website is created by Iftekhar Mahmud Saimon — a passionate artist, gamer, and YouTuber. Built for speed, style, and fun.</p>
+      <div class="content-grid">
+        <div class="content-item">
+          <div class="icon"><i class="fa-solid fa-bolt"></i></div>
+          <h3>Performance-first</h3>
+          <div class="sub">Procedural graphics, minimal payload.</div>
+        </div>
+        <div class="content-item">
+          <div class="icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+          <h3>Modern visuals</h3>
+          <div class="sub">Neon glass, bloom, and particles.</div>
+        </div>
+        <div class="content-item">
+          <div class="icon"><i class="fa-solid fa-code"></i></div>
+          <h3>JSON-powered</h3>
+          <div class="sub">Manage lists by editing a single file.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="bar">© <span id="year"></span> Saimon BD. All rights reserved.</div>
+  </footer>
+
+  <!-- === Inline JSON as fallback ===
+       Put the same structure into /content.json to manage externally.
+       If /content.json exists, it will override this inline data. -->
+  <script type="application/json" id="content-data">
+  {
+    "fun": [
+      {"title": "The Glow of Hope", "url": "story1.html", "type": "Story", "icon": "fa-solid fa-sparkles"},
+      {"title": "coming soon", "url": "story2.html", "type": "Story", "icon": "fa-solid fa-hourglass-half"},
+      {"title": "coming soon", "url": "story3.html", "type": "Story", "icon": "fa-solid fa-hourglass-half"}
+    ],
+    "games": [
+      {"title": "Tik Tak Toe", "url": "game1.html", "type": "Game", "icon": "fa-solid fa-grid-2"},
+      {"title": "Clicky Tiles", "url": "game2.html", "type": "Game", "icon": "fa-solid fa-square"},
+      {"title": "Endless train jumper", "url": "game3.html", "type": "Game", "icon": "fa-solid fa-train"},
+      {"title": "color catcher", "url": "game4cc.html", "type": "Game", "icon": "fa-solid fa-droplet"}
+    ]
+  }
+  </script>
+
+  <script>
+    /* -----------------------------
+       SECTION SWITCHER (keeps links)
+       TIP: You can rename menu labels, but keep each .menu-item's data-target
+            matching the <section id=\"...\">
+    ------------------------------*/
+    const navItems = document.querySelectorAll('nav .menu-item');
+    navItems.forEach(el=>{
+      el.addEventListener('click',()=>{
+        const target = el.getAttribute('data-target');
+        document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
+        navItems.forEach(i=>i.classList.remove('active'));
+        el.classList.add('active');
+        // small entrance animation
+        gsap.fromTo('#'+target, {y:10, opacity:0}, {y:0, opacity:1, duration:.4, ease:'power2.out'});
+      });
+    });
+
+    // IMPORTANT: Do NOT rename these — other pages rely on these exact function names.
+    /* Nav underline positioner */
+    const navEl = document.querySelector('nav');
+    const underline = document.getElementById('nav-underline');
+    function moveUnderline(activeEl){
+      if(!navEl || !underline || !activeEl) return;
+      const navRect = navEl.getBoundingClientRect();
+      const rect = activeEl.getBoundingClientRect();
+      underline.style.left = (rect.left - navRect.left) + 'px';
+      underline.style.width = rect.width + 'px';
+    }
+    window.addEventListener('load', ()=>moveUnderline(document.querySelector('nav .menu-item.active')));
+    window.addEventListener('resize', ()=>moveUnderline(document.querySelector('nav .menu-item.active')));
+    navItems.forEach(el=> el.addEventListener('click', ()=>moveUnderline(el)));
+
+    function openStory(storyUrl){ window.location.href = storyUrl; }
+    function openGame(gameUrl){ window.location.href = gameUrl; }
+
+    /* -----------------------------
+       JSON LOADING & RENDERING
+       - Tries /content.json first
+       - Falls back to inline JSON (#content-data)
+       - Preserves existing openStory/openGame links
+    ------------------------------*/
+    const defaultData = JSON.parse(document.getElementById('content-data').textContent);
+
+    async function loadData(){
+      try {
+        const res = await fetch('content.json', {cache:'no-store'});
+        if(!res.ok) throw new Error('No external content.json');
+        const data = await res.json();
+        return data;
+      } catch(e){
+        return defaultData;
+      }
+    }
+
+    function renderList(sectionType, data){
+      const container = document.getElementById(sectionType+'-list');
+      if(!container) return;
+      container.innerHTML='';
+      data.forEach(item=>{
+        const card = document.createElement('div');
+        card.className = 'content-item';
+        card.setAttribute('data-title', (item.title||'').toLowerCase());
+        card.onclick = ()=>{
+          if(sectionType==='fun') return openStory(item.url);
+          if(sectionType==='games') return openGame(item.url);
+        };
+        card.innerHTML = `
+          <div class="icon"><i class="${item.icon || 'fa-regular fa-star'}"></i></div>
+          <h3>${item.title}</h3>
+          <div class="sub">${item.type || ''}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function searchContent(sectionType){
+      const input = document.getElementById(sectionType+'-search');
+      const query = (input?.value || '').toLowerCase();
+      document.querySelectorAll('#'+sectionType+'-list .content-item').forEach(card=>{
+        const title = card.getAttribute('data-title')||'';
+        card.style.display = title.includes(query) ? '' : 'none';
+      });
+    }
+
+    (async function initLists(){
+      const data = await loadData();
+      renderList('fun', data.fun || []);
+      renderList('games', data.games || []);
+    })();
+
+    /* -----------------------------
+       FOOTER YEAR
+    ------------------------------*/
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    /* -----------------------------
+       THREE.JS BACKGROUND (r128)
+       - Stars (Points)
+       - TorusKnot with emissive glow
+       - Subtle camera drift
+       - Bloom postprocessing
+    ------------------------------*/
+    const canvas = document.getElementById('bg-canvas');
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true, powerPreference:'high-performance'});
+    function setRendererSize(){
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    setRendererSize();
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 0.8, 7);
+
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x080820, 0.6); scene.add(hemi);
+    const point = new THREE.PointLight(0xffffff, 1.2, 100); point.position.set(6,4,6); scene.add(point);
+
+    // Stars
+    const starCount = 1800; // TIP: Lower this (e.g., 900) if you need more FPS on low‑end devices
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+    for(let i=0;i<starCount;i++){
+      const r = 60 * Math.random() + 20; // 20..80
+      const phi = Math.random()*Math.PI*2;
+      const costheta = Math.random()*2 - 1;
+      const theta = Math.acos(costheta);
+      const x = r * Math.sin(theta) * Math.cos(phi);
+      const y = r * Math.sin(theta) * Math.sin(phi);
+      const z = r * Math.cos(theta);
+      starPos[i*3] = x; starPos[i*3+1] = y; starPos[i*3+2] = z;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const stars = new THREE.Points(
+      starGeo,
+      new THREE.PointsMaterial({ size: 0.05, transparent:true, opacity:0.8 })
+    );
+    scene.add(stars);
+
+    // TorusKnot centerpiece
+    const knot = new THREE.TorusKnotGeometry(1.1, 0.35, 220, 28, 2, 3); // TIP: Swap with SphereGeometry(1.4, 64, 64) for a simple sphere
+    const knotMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#7F5AF0'), metalness: 0.7, roughness: 0.25,
+      emissive: new THREE.Color('#FFD700'), emissiveIntensity: 0.35
+    });
+    const mesh = new THREE.Mesh(knot, knotMat);
+    scene.add(mesh);
+
+    // Subtle floating using GSAP
+    gsap.to(mesh.rotation, { y: Math.PI*2, duration: 36, ease:'none', repeat:-1 });
+    gsap.to(mesh.rotation, { x: Math.PI*2, duration: 64, ease:'none', repeat:-1 });
+
+    // Postprocessing (Bloom)
+    const composer = new THREE.EffectComposer(renderer);
+    const renderPass = new THREE.RenderPass(scene, camera);
+    composer.addPass(renderPass);
+    // TIP: Bloom strength/threshold/radius — tweak first arg (strength) for more/less glow
+    const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.9, 0.85, 0.2);
+    // TIP: To disable bloom, comment out the two lines that create/add 'bloom'
+    composer.addPass(bloom);
+
+    // Responsive
+    window.addEventListener('resize', ()=>{
+      camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+      setRendererSize();
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Mouse parallax
+    const mouse = {x:0,y:0};
+    window.addEventListener('mousemove', (e)=>{
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = (e.clientY / window.innerHeight) * 2 - 1;
+    });
+
+    // Animate
+    let t = 0;
+    function animate(){
+      requestAnimationFrame(animate);
+      t += 0.005;
+      stars.rotation.y += 0.0008; // slow drift
+      // camera gentle drift + parallax
+      camera.position.x = Math.sin(t*0.7)*0.6 + mouse.x*0.4;
+      camera.position.y = 0.8 + Math.sin(t*0.9)*0.2 - mouse.y*0.2;
+      camera.lookAt(0,0,0);
+      composer.render();
+    }
+    animate();
+  </script>
+</body>
+</html>
