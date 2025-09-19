@@ -1,0 +1,643 @@
+# Create a small, JSON-driven "Give Me a Dare" website project with graphics and easy customization.
+import json, os, textwrap, zipfile, io, base64, pathlib
+
+project_dir = "/mnt/data/give-me-a-dare"
+assets_dir = f"{project_dir}/assets"
+data_dir = f"{project_dir}/data"
+
+os.makedirs(project_dir, exist_ok=True)
+os.makedirs(assets_dir, exist_ok=True)
+os.makedirs(data_dir, exist_ok=True)
+
+index_html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Give Me a Dare</title>
+  <meta name="description" content="Spin up a random dare — JSON powered and easy to customize." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Decorative background graphics -->
+  <canvas id="bgParticles" aria-hidden="true"></canvas>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="grid"></div>
+
+  <header class="site-header">
+    <img class="logo" src="assets/icon.svg" alt="" width="40" height="40"/>
+    <div class="titles">
+      <h1 id="siteTitle">Give Me a Dare</h1>
+      <p id="siteTagline" class="tagline">Press the button. Do the thing.</p>
+    </div>
+    <button class="info-btn" id="openAbout" title="About & How to edit">?</button>
+  </header>
+
+  <main class="container">
+    <section class="controls card">
+      <div class="row">
+        <label class="control">
+          <span>Category</span>
+          <select id="categorySelect"></select>
+        </label>
+        <label class="control">
+          <span>Difficulty</span>
+          <select id="difficultySelect"></select>
+        </label>
+        <label class="control">
+          <span>Players</span>
+          <input type="number" id="playersInput" min="1" value="2" />
+        </label>
+      </div>
+      <div class="row actions">
+        <button id="rollBtn" class="primary">🎲 Give me a dare</button>
+        <button id="surpriseBtn" class="secondary">✨ Surprise me</button>
+        <button id="saveBtn" class="ghost" title="Save this dare">🔖 Save</button>
+      </div>
+    </section>
+
+    <section class="dare card" id="dareCard" aria-live="polite" aria-atomic="true">
+      <span class="pill" id="dareMeta">Ready?</span>
+      <p class="dare-text" id="dareText">Choose filters and press the button!</p>
+      <div class="badges">
+        <span class="badge" id="badgeCategory">—</span>
+        <span class="badge" id="badgeDifficulty">—</span>
+      </div>
+      <div class="card-actions">
+        <button id="anotherBtn">↻ Another</button>
+        <button id="copyBtn">📋 Copy</button>
+        <button id="shareBtn">🔗 Share</button>
+      </div>
+    </section>
+
+    <section class="saved card">
+      <h2>Saved dares</h2>
+      <ul id="savedList" class="saved-list"></ul>
+      <button id="clearSaved" class="danger">Clear Saved</button>
+    </section>
+  </main>
+
+  <dialog id="aboutDialog" class="about card">
+    <button id="closeAbout" class="close">✕</button>
+    <h2>About this app</h2>
+    <p>This tiny web app is powered by two JSON files:</p>
+    <ol>
+      <li><code>data/settings.json</code> – title, tagline, theme colors, toggles.</li>
+      <li><code>data/dares.json</code> – categories, difficulties, and the dares themselves.</li>
+    </ol>
+    <p>Edit those files and refresh to see changes. No build step required.</p>
+    <details>
+      <summary>JSON formats</summary>
+      <pre><code>{
+  "title": "Give Me a Dare",
+  "tagline": "Press the button. Do the thing.",
+  "theme": { "primary": "#7F5AF0", "accent": "#2CB67D", "bgA": "#0f1020", "bgB": "#17182f" },
+  "confetti": true
+}
+---
+{
+  "categories": ["Fun","Outdoor","Family","Office","Party","Fitness","Romance"],
+  "difficulties": ["Any","Easy","Medium","Hard","Extreme"],
+  "dares": [
+    { "id":"d1", "text":"Speak only in emojis for 2 minutes.", "category":"Fun", "difficulty":"Easy" }
+  ]
+}</code></pre>
+    </details>
+    <p><strong>Tip:</strong> You can host this folder anywhere (GitHub Pages, Netlify, your own server). It’s a single-page app.</p>
+  </dialog>
+
+  <footer class="site-footer">
+    <p>Made with ❤️ — JSON-driven. <a href="#" id="downloadState">Export saved</a></p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+"""
+
+styles_css = """/* === Base === */
+:root {
+  --bg-a: #0f1020;
+  --bg-b: #17182f;
+  --text: #eaeaf5;
+  --muted: #a4a7be;
+  --primary: #7F5AF0;
+  --accent: #2CB67D;
+  --danger: #ef476f;
+  --card: rgba(255,255,255,0.06);
+  --glass: rgba(255,255,255,0.12);
+  --shadow: 0 10px 30px rgba(0,0,0,0.3);
+  --radius: 18px;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: radial-gradient(1200px 800px at 10% 10%, var(--bg-b), transparent 70%),
+              radial-gradient(1000px 700px at 90% 20%, #131433, transparent 70%),
+              linear-gradient(180deg, var(--bg-a), var(--bg-b));
+  overflow-x: hidden;
+}
+
+/* Decorative grid */
+.grid {
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(900px 600px at 50% 20%, black, transparent 70%);
+  pointer-events: none;
+}
+
+.blob {
+  position: fixed;
+  width: 50vmax; height: 50vmax;
+  filter: blur(60px);
+  opacity: 0.5;
+  z-index: -1;
+  border-radius: 50%;
+  animation: float 20s ease-in-out infinite alternate;
+}
+.blob-1 { top: -20vmax; left: -10vmax; background: radial-gradient(circle at 30% 30%, rgba(127,90,240,0.7), transparent 60%); }
+.blob-2 { bottom: -25vmax; right: -15vmax; background: radial-gradient(circle at 70% 70%, rgba(44,182,125,0.7), transparent 60%); }
+@keyframes float { to { transform: translate3d(2vmax,2vmax,0) rotate(5deg); } }
+
+/* Particles canvas */
+#bgParticles { position: fixed; inset: 0; z-index: -1; }
+
+/* Layout */
+.site-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 22px clamp(16px, 5vw, 48px);
+}
+.logo { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); }
+.titles h1 { margin: 0; font-size: clamp(28px, 4vw, 44px); letter-spacing: 0.5px; }
+.tagline { margin: 2px 0 0; color: var(--muted); }
+
+.info-btn {
+  margin-left: auto; border: none; background: var(--card); color: var(--text);
+  padding: 10px 14px; border-radius: 999px; cursor: pointer; backdrop-filter: blur(6px);
+  box-shadow: var(--shadow);
+}
+.info-btn:hover { background: var(--glass); }
+
+.container {
+  display: grid; gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0 clamp(16px, 5vw, 48px) 64px;
+  max-width: 1100px; margin: 0 auto;
+}
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: clamp(16px, 2.5vw, 28px);
+  backdrop-filter: blur(8px);
+}
+
+.controls .row { display: flex; gap: 16px; flex-wrap: wrap; }
+.control { display: grid; gap: 6px; min-width: 180px; }
+.control span { color: var(--muted); font-weight: 600; font-size: 12px; letter-spacing: .6px; text-transform: uppercase; }
+select, input[type="number"] {
+  background: var(--card); color: var(--text);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px; padding: 12px 14px; outline: none;
+}
+select:focus, input[type="number"]:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(44,182,125,0.2); }
+
+.actions { margin-top: 8px; }
+button {
+  font-weight: 700;
+  border: none; cursor: pointer;
+  padding: 12px 16px; border-radius: 12px;
+}
+button.primary { background: linear-gradient(135deg, var(--primary), #9b8bf7); color: white; }
+button.secondary { background: linear-gradient(135deg, var(--accent), #61d2a4); color: #091016; }
+button.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text); }
+button.danger { background: linear-gradient(135deg, var(--danger), #ff7aa0); color: white; }
+button:hover { transform: translateY(-1px); }
+button:active { transform: translateY(0); }
+
+.dare { position: relative; overflow: hidden; }
+.pill {
+  position: absolute; top: 16px; right: 16px;
+  padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.2); color: var(--muted); font-weight: 600; font-size: 12px;
+  backdrop-filter: blur(6px);
+}
+.dare-text {
+  margin: 24px 0 6px;
+  font-size: clamp(22px, 3.5vw, 36px);
+  line-height: 1.25;
+  font-weight: 700;
+}
+.badges { display: flex; gap: 8px; margin-bottom: 6px; }
+.badge { background: var(--glass); border: 1px solid rgba(255,255,255,0.2); padding: 6px 10px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 12px; }
+.card-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+.saved h2 { margin: 0 0 8px; }
+.saved-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.saved-list li {
+  display: flex; gap: 10px; align-items: center;
+  background: var(--card); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 10px 12px;
+}
+.saved-list .tag { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+/* About dialog */
+dialog.about { max-width: 740px; width: 95%; }
+dialog[open] { animation: show .2s ease-out; }
+@keyframes show { from { opacity: 0; transform: translateY(6px) } }
+
+.close { position: absolute; top: 12px; right: 12px; background: transparent; border: 1px solid rgba(255,255,255,0.25); }
+.site-footer { text-align: center; color: var(--muted); padding: 20px 0 40px; }
+.site-footer a { color: var(--text); }
+"""
+
+script_js = """// Utility: load JSON files
+async function loadJSON(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`Failed to load ${path}`);
+  return res.json();
+}
+
+const confetti = {
+  shoot(count=120) {
+    const c = document.createElement('canvas');
+    c.className = 'confetti';
+    Object.assign(c.style, {position:'fixed', inset:'0', pointerEvents:'none'});
+    document.body.appendChild(c);
+    const ctx = c.getContext('2d');
+    const W = c.width = innerWidth;
+    const H = c.height = innerHeight;
+    const pieces = Array.from({length: count}, () => ({
+      x: Math.random() * W,
+      y: -20 - Math.random()*H/2,
+      s: 6 + Math.random()*6,
+      a: Math.random()*Math.PI*2,
+      v: 2 + Math.random()*4,
+      w: 0.02 + Math.random()*0.1,
+      col: `hsl(${Math.random()*360}, 80%, 60%)`
+    }));
+    let t = 0;
+    const tick = () => {
+      ctx.clearRect(0,0,W,H);
+      pieces.forEach(p => {
+        p.y += p.v;
+        p.a += p.w;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.a);
+        ctx.fillStyle = p.col;
+        ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s * 0.6);
+        ctx.restore();
+      });
+      t++;
+      if (t < 200) requestAnimationFrame(tick); else c.remove();
+    };
+    tick();
+  }
+};
+
+// Background particle field
+(function particles(){
+  const canvas = document.getElementById('bgParticles');
+  const ctx = canvas.getContext('2d');
+  let W,H; const dots=[];
+  function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+  addEventListener('resize', resize); resize();
+  for(let i=0;i<90;i++) dots.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3});
+  function loop(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    dots.forEach(d=>{
+      d.x+=d.vx; d.y+=d.vy;
+      if(d.x<0||d.x>W) d.vx*=-1;
+      if(d.y<0||d.y>H) d.vy*=-1;
+      ctx.beginPath(); ctx.arc(d.x,d.y,1.2,0,Math.PI*2); ctx.fill();
+    });
+    // connections
+    for(let i=0;i<dots.length;i++){
+      for(let j=i+1;j<dots.length;j++){
+        const a=dots[i], b=dots[j];
+        const dx=a.x-b.x, dy=a.y-b.y, dist=Math.hypot(dx,dy);
+        if(dist<110){
+          ctx.strokeStyle=`rgba(255,255,255,${0.06*(1-dist/110)})`;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+// State
+let SETTINGS = null;
+let DATA = null;
+let lastDare = null;
+
+const els = {
+  title: document.getElementById('siteTitle'),
+  tagline: document.getElementById('siteTagline'),
+  category: document.getElementById('categorySelect'),
+  difficulty: document.getElementById('difficultySelect'),
+  players: document.getElementById('playersInput'),
+  roll: document.getElementById('rollBtn'),
+  surprise: document.getElementById('surpriseBtn'),
+  save: document.getElementById('saveBtn'),
+  another: document.getElementById('anotherBtn'),
+  copy: document.getElementById('copyBtn'),
+  share: document.getElementById('shareBtn'),
+  dareText: document.getElementById('dareText'),
+  dareMeta: document.getElementById('dareMeta'),
+  badgeCat: document.getElementById('badgeCategory'),
+  badgeDif: document.getElementById('badgeDifficulty'),
+  savedList: document.getElementById('savedList'),
+  clearSaved: document.getElementById('clearSaved'),
+  about: document.getElementById('aboutDialog'),
+  openAbout: document.getElementById('openAbout'),
+  closeAbout: document.getElementById('closeAbout'),
+  downloadState: document.getElementById('downloadState')
+};
+
+// Load JSON and init
+(async function init(){
+  SETTINGS = await loadJSON('data/settings.json');
+  DATA = await loadJSON('data/dares.json');
+  applyTheme(SETTINGS.theme);
+  els.title.textContent = SETTINGS.title || 'Give Me a Dare';
+  els.tagline.textContent = SETTINGS.tagline || 'Press the button. Do the thing.';
+
+  // Populate selects
+  populateSelect(els.category, ['Any', ...DATA.categories]);
+  populateSelect(els.difficulty, DATA.difficulties);
+
+  // Wire up buttons
+  els.roll.addEventListener('click', () => roll(false));
+  els.surprise.addEventListener('click', () => roll(true));
+  els.another.addEventListener('click', () => roll(false));
+  els.save.addEventListener('click', saveCurrent);
+  els.copy.addEventListener('click', copyText);
+  els.share.addEventListener('click', shareText);
+  els.clearSaved.addEventListener('click', clearSaved);
+  els.openAbout.addEventListener('click', () => els.about.showModal());
+  els.closeAbout.addEventListener('click', () => els.about.close());
+  els.downloadState.addEventListener('click', exportSaved);
+
+  renderSaved();
+})().catch(err => {
+  alert('Failed to initialize: '+ err.message);
+  console.error(err);
+});
+
+function populateSelect(select, items){
+  select.innerHTML = '';
+  items.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    select.appendChild(opt);
+  });
+}
+
+function roll(surprise=false){
+  const cat = els.category.value;
+  const dif = els.difficulty.value;
+  let pool = DATA.dares.slice();
+
+  if (cat && cat !== 'Any') pool = pool.filter(d => d.category === cat);
+  if (dif && dif !== 'Any') pool = pool.filter(d => (d.difficulty||'Any') === dif);
+
+  if (surprise) {
+    // Surprise tweaks: randomize filters a bit
+    const rc = randomChoice(['Any', ...DATA.categories]);
+    const rd = randomChoice(DATA.difficulties);
+    els.category.value = rc;
+    els.difficulty.value = rd;
+    pool = DATA.dares.filter(d => (rc==='Any'||d.category===rc) && (rd==='Any'||(d.difficulty||'Any')===rd));
+  }
+
+  if (pool.length === 0) {
+    showDare({text: 'No dares match those filters. Try changing category or difficulty.', category: '—', difficulty:'—'});
+    return;
+  }
+  // Avoid immediate repetition
+  let choice = randomChoice(pool);
+  if (lastDare && pool.length > 1) {
+    let n = 0;
+    while (choice.id === lastDare.id && n < 10) { choice = randomChoice(pool); n++; }
+  }
+  lastDare = choice;
+  showDare(choice);
+  if (SETTINGS.confetti) confetti.shoot(100);
+}
+
+function showDare(d){
+  els.dareText.textContent = d.text;
+  els.badgeCat.textContent = d.category || '—';
+  els.badgeDif.textContent = d.difficulty || 'Any';
+  const meta = `#${d.id||'—'}`;
+  els.dareMeta.textContent = meta;
+  pulseCard();
+}
+
+function pulseCard(){
+  const card = document.getElementById('dareCard');
+  card.animate([
+    { transform: 'scale(1)', boxShadow:'var(--shadow)' },
+    { transform: 'scale(1.01)', boxShadow:'0 18px 40px rgba(0,0,0,0.45)' },
+    { transform: 'scale(1)', boxShadow:'var(--shadow)' }
+  ], { duration: 500, easing:'ease-out' });
+}
+
+function randomChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+// Saved list (localStorage)
+const KEY = 'gmad_saved';
+function getSaved(){
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; }
+}
+function setSaved(list){
+  localStorage.setItem(KEY, JSON.stringify(list));
+  renderSaved();
+}
+function saveCurrent(){
+  if (!lastDare) return;
+  const list = getSaved();
+  if (!list.find(x => x.id === lastDare.id)) {
+    list.push(lastDare);
+    setSaved(list);
+  }
+}
+function renderSaved(){
+  const list = getSaved();
+  els.savedList.innerHTML = '';
+  if (list.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Nothing saved yet.';
+    els.savedList.appendChild(li);
+    return;
+  }
+  list.forEach(d => {
+    const li = document.createElement('li');
+    li.innerHTML = `<strong>${escapeHTML(d.text)}</strong> <span class="tag">${d.category||'—'} · ${d.difficulty||'Any'}</span>`;
+    const del = document.createElement('button'); del.textContent = '🗑'; del.title = 'Remove';
+    del.addEventListener('click', () => {
+      const updated = getSaved().filter(x => x.id !== d.id);
+      setSaved(updated);
+    });
+    li.prepend(del);
+    els.savedList.appendChild(li);
+  });
+}
+function clearSaved(){ setSaved([]); }
+
+function copyText(){
+  const txt = els.dareText.textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    toast('Copied!');
+  });
+}
+async function shareText(){
+  const txt = els.dareText.textContent;
+  try {
+    if (navigator.share) {
+      await navigator.share({ text: txt, title: 'Give Me a Dare' });
+    } else {
+      await navigator.clipboard.writeText(txt);
+      toast('Link copied!');
+    }
+  } catch(e){ /* canceled */ }
+}
+function exportSaved(){
+  const blob = new Blob([JSON.stringify(getSaved(), null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'my-saved-dares.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+function toast(msg){
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'24px', left:'50%', transform:'translateX(-50%)',
+    background:'rgba(0,0,0,0.6)', color:'#fff', padding:'10px 14px', borderRadius:'12px',
+    border:'1px solid rgba(255,255,255,0.2)', zIndex: 9999
+  });
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 1500);
+}
+function escapeHTML(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+function applyTheme(theme){
+  if (!theme) return;
+  const root = document.documentElement;
+  if (theme.primary) root.style.setProperty('--primary', theme.primary);
+  if (theme.accent) root.style.setProperty('--accent', theme.accent);
+  if (theme.bgA) root.style.setProperty('--bg-a', theme.bgA);
+  if (theme.bgB) root.style.setProperty('--bg-b', theme.bgB);
+}
+
+// Keyboard shortcut
+addEventListener('keydown', (e) => { if (e.key === ' ') { e.preventDefault(); roll(false);} });
+
+"""
+
+icon_svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7F5AF0"/>
+      <stop offset="1" stop-color="#2CB67D"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="#0f1020"/>
+  <g transform="translate(128,128)">
+    <circle r="78" fill="url(#g)" opacity="0.15"/>
+    <path d="M-58 -10 h116 a10 10 0 0 1 10 10 v0 a10 10 0 0 1 -10 10 h-116 a10 10 0 0 1 -10 -10 v0 a10 10 0 0 1 10 -10z" fill="url(#g)"/>
+    <circle r="10" fill="#fff" transform="translate(-24,-20)"/>
+    <circle r="10" fill="#fff" transform="translate(24,-20)"/>
+    <path d="M-24 28 q24 14 48 0" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>
+"""
+
+settings_json = {
+  "title": "Give Me a Dare",
+  "tagline": "Press the button. Do the thing.",
+  "theme": { "primary": "#7F5AF0", "accent": "#2CB67D", "bgA": "#0f1020", "bgB": "#17182f" },
+  "confetti": True
+}
+
+dares_json = {
+  "categories": ["Fun","Outdoor","Family","Office","Party","Fitness","Romance","Social","Tech","Prank"],
+  "difficulties": ["Any","Easy","Medium","Hard","Extreme"],
+  "dares": [
+    {"id":"d1","text":"Speak only in emojis for 2 minutes.","category":"Fun","difficulty":"Easy"},
+    {"id":"d2","text":"Do 15 push-ups right now.","category":"Fitness","difficulty":"Medium"},
+    {"id":"d3","text":"Text the fifth contact: “You’re a legend.”","category":"Social","difficulty":"Medium"},
+    {"id":"d4","text":"Balance a book on your head and walk across the room.","category":"Fun","difficulty":"Easy"},
+    {"id":"d5","text":"Share a wholesome childhood photo in the group.","category":"Family","difficulty":"Easy"},
+    {"id":"d6","text":"Drink water like a fancy tea-taster—slurp and review it.","category":"Party","difficulty":"Easy"},
+    {"id":"d7","text":"Write your name using your non-dominant hand.","category":"Fun","difficulty":"Easy"},
+    {"id":"d8","text":"Do a 30-second dance with no music.","category":"Party","difficulty":"Medium"},
+    {"id":"d9","text":"Tell a genuine compliment to the person on your right.","category":"Social","difficulty":"Easy"},
+    {"id":"d10","text":"Hold a plank for 45 seconds.","category":"Fitness","difficulty":"Medium"},
+    {"id":"d11","text":"Swap one accessory/shoe with another player.","category":"Party","difficulty":"Medium"},
+    {"id":"d12","text":"Do your best robot impression.","category":"Fun","difficulty":"Easy"},
+    {"id":"d13","text":"Send a voice note of you singing one line of any song.","category":"Social","difficulty":"Hard"},
+    {"id":"d14","text":"Pretend the floor is lava for 20 seconds.","category":"Fun","difficulty":"Easy"},
+    {"id":"d15","text":"Try to whistle with a mouth full of water (sink nearby!).","category":"Prank","difficulty":"Hard"},
+    {"id":"d16","text":"Give a 30-second TED talk on toothpaste.","category":"Office","difficulty":"Medium"},
+    {"id":"d17","text":"Take a selfie doing your fiercest model pose.","category":"Party","difficulty":"Easy"},
+    {"id":"d18","text":"Do 20 squats while naming countries alphabetically.","category":"Fitness","difficulty":"Hard"},
+    {"id":"d19","text":"Tell a pun so bad it’s good.","category":"Office","difficulty":"Easy"},
+    {"id":"d20","text":"Share the last photo you took (if comfortable).","category":"Social","difficulty":"Medium"},
+    {"id":"d21","text":"Recite the alphabet backwards in 30 seconds.","category":"Tech","difficulty":"Hard"},
+    {"id":"d22","text":"Balance a spoon on your nose for 15 seconds.","category":"Fun","difficulty":"Medium"},
+    {"id":"d23","text":"Do your best animal impression and keep a straight face.","category":"Family","difficulty":"Easy"},
+    {"id":"d24","text":"Speak in rhyme until your next turn.","category":"Party","difficulty":"Medium"},
+    {"id":"d25","text":"Try to lick your elbow (yes, really).","category":"Prank","difficulty":"Easy"},
+    {"id":"d26","text":"Hold a wall sit for one full minute.","category":"Fitness","difficulty":"Hard"},
+    {"id":"d27","text":"Describe your day using only movie titles.","category":"Office","difficulty":"Medium"},
+    {"id":"d28","text":"Make a paper airplane; if it flies 5m, you win a pass.","category":"Tech","difficulty":"Medium"},
+    {"id":"d29","text":"Tell a short, true, funny story from school.","category":"Family","difficulty":"Easy"},
+    {"id":"d30","text":"Balance a bottle on your head and take 10 steps.","category":"Fun","difficulty":"Hard"},
+    {"id":"d31","text":"Hand over your phone; others choose a safe selfie to post in chat.","category":"Social","difficulty":"Extreme"},
+    {"id":"d32","text":"Hold a yoga tree pose for 30 seconds.","category":"Fitness","difficulty":"Medium"},
+    {"id":"d33","text":"Act out a scene from your favorite movie—no words!","category":"Party","difficulty":"Medium"},
+    {"id":"d34","text":"Write a haiku about the weather right now.","category":"Office","difficulty":"Easy"},
+    {"id":"d35","text":"Try tongue-twisters: “Unique New York” ×10 fast.","category":"Fun","difficulty":"Hard"},
+    {"id":"d36","text":"Let another player set your status/caption for 10 minutes.","category":"Prank","difficulty":"Hard"},
+    {"id":"d37","text":"Do 30 seconds of shadow boxing.","category":"Fitness","difficulty":"Medium"},
+    {"id":"d38","text":"Teach a 20-second life hack you actually use.","category":"Family","difficulty":"Easy"},
+    {"id":"d39","text":"Improvise an ad for an invisible product.","category":"Office","difficulty":"Medium"},
+    {"id":"d40","text":"Only whisper until your next turn.","category":"Party","difficulty":"Easy"}
+  ]
+}
+
+# Write files
+with open(f"{project_dir}/index.html", "w", encoding="utf-8") as f: f.write(index_html)
+with open(f"{project_dir}/styles.css", "w", encoding="utf-8") as f: f.write(styles_css)
+with open(f"{project_dir}/script.js", "w", encoding="utf-8") as f: f.write(script_js)
+with open(f"{assets_dir}/icon.svg", "w", encoding="utf-8") as f: f.write(icon_svg)
+with open(f"{data_dir}/settings.json", "w", encoding="utf-8") as f: json.dump(settings_json, f, indent=2)
+with open(f"{data_dir}/dares.json", "w", encoding="utf-8") as f: json.dump(dares_json, f, ensure_ascii=False, indent=2)
+
+# Zip the project
+zip_path = "/mnt/data/give-me-a-dare.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    for root, _, files in os.walk(project_dir):
+        for name in files:
+            fp = os.path.join(root, name)
+            z.write(fp, arcname=os.path.relpath(fp, project_dir))
+
+zip_path
