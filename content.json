@@ -2,7 +2,7 @@
   "fun": [
     { "title": "The Glow of Hope", "url": "story1.html", "type": "Story", "icon": "fa-solid fa-sparkles" },
     { "title": "READ IT", "url": "https://saimon1906.github.io/read-it/", "type": "articles", "icon": "fa-solid fa-moon" },
-    { "title": "coming soon", "url": "story3.html", "type": "Story", "icon": "fa-solid fa-tower-broadcast" },
+    { "title": "GIMME A DARE", "url": "gimme-a-dare.html", "type": "Story", "icon": "fa-solid fa-tower-broadcast" },
     { "title": "coming soon", "url": "story4.html", "type": "Story", "icon": "fa-solid fa-train" },
     { "title": "coming soon", "url": "story-poem.html", "type": "Tool", "icon": "fa-solid fa-feather" },
     { "title": "coming soon", "url": "story-mystery-1.html", "type": "Story", "icon": "fa-solid fa-user-secret" },
